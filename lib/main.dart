@@ -67,7 +67,6 @@ class _MyHomePageState extends State<MyHomePage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // SharedPreferences keys
   static const String _counterKey = 'counter_value';
   static const String _imageStateKey = 'image_state';
 
@@ -203,7 +202,6 @@ class _MyHomePageState extends State<MyHomePage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            // Image Section with Animation
             FadeTransition(
               opacity: _fadeAnimation,
               child: Container(
@@ -235,7 +233,6 @@ class _MyHomePageState extends State<MyHomePage>
             
             const SizedBox(height: 20),
             
-            // Theme Toggle Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -268,7 +265,6 @@ class _MyHomePageState extends State<MyHomePage>
             
             const SizedBox(height: 30),
             
-            // Reset Button with distinct styling
             ElevatedButton(
               onPressed: _showResetDialog,
               style: ElevatedButton.styleFrom(
@@ -290,8 +286,6 @@ class _MyHomePageState extends State<MyHomePage>
             ),
             
             const SizedBox(height: 30),
-            
-            // Counter Section
             const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
