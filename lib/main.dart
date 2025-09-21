@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -66,6 +67,10 @@ class _MyHomePageState extends State<MyHomePage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // SharedPreferences keys
+  static const String _counterKey = 'counter_value';
+  static const String _imageStateKey = 'image_state';
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +83,8 @@ class _MyHomePageState extends State<MyHomePage>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    
+    _loadState();
   }
 
   @override
@@ -86,10 +93,29 @@ class _MyHomePageState extends State<MyHomePage>
     super.dispose();
   }
 
+  Future<void> _loadState() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _counter = prefs.getInt(_counterKey) ?? 0;
+      _isFirstImage = prefs.getBool(_imageStateKey) ?? true;
+    });
+  }
+
+  Future<void> _saveCounter() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_counterKey, _counter);
+  }
+
+  Future<void> _saveImageState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_imageStateKey, _isFirstImage);
+  }
+
   void _incrementCounter() {
     setState(() {
       _counter++;
     });
+    _saveCounter(); 
   }
 
   void _toggleImage() {
@@ -97,8 +123,57 @@ class _MyHomePageState extends State<MyHomePage>
       setState(() {
         _isFirstImage = !_isFirstImage;
       });
+      _saveImageState();
       _animationController.forward();
     });
+  }
+
+  Future<void> _showResetDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Reset'),
+          content: const Text('Are you sure you want to reset the application? This will clear the counter and reset the image to its initial state.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      _resetApplication();
+    }
+  }
+
+  
+  Future<void> _resetApplication() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    await prefs.remove(_counterKey);
+    await prefs.remove(_imageStateKey);
+    
+    await _animationController.reverse();
+    
+    setState(() {
+      _counter = 0;
+      _isFirstImage = true;
+    });
+    
+
+    await _animationController.forward();
   }
 
   @override
@@ -142,8 +217,8 @@ class _MyHomePageState extends State<MyHomePage>
                   borderRadius: BorderRadius.circular(10),
                   child: Image.network(
                     _isFirstImage 
-                      ? 'https://picsum.photos/200/200?random=1'
-                      : 'https://picsum.photos/200/200?random=2',
+                      ? 'https://fastly.picsum.photos/id/1005/200/200.jpg?hmac=TlSxs8p2lqA8VkV-Kpg7DKnp8BkwK9UDBHrU2UegLzI'
+                      : 'https://fastly.picsum.photos/id/916/200/200.jpg?hmac=hEUrLG-ayFdIoyHKUwazT8SMEsVxWH9xGz4tx-e0cN0',
                     width: 200,
                     height: 200,
                     fit: BoxFit.cover,
@@ -191,7 +266,30 @@ class _MyHomePageState extends State<MyHomePage>
               ],
             ),
             
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
+            
+            // Reset Button with distinct styling
+            ElevatedButton(
+              onPressed: _showResetDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade400,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.refresh, size: 18),
+                  SizedBox(width: 8),
+                  Text('Reset', style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 30),
             
             // Counter Section
             const Text('You have pushed the button this many times:'),
